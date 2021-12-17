@@ -1,88 +1,58 @@
 import React, { Suspense, useEffect, useRef } from "react";
-import { Canvas } from "react-three-fiber";
-import { OrbitControls, Environment, Plane, Reflector } from "drei";
-import gsap from "gsap";
-import Text from "./Text";
+import {Canvas, useThree} from '@react-three/fiber';
+import { useGLTF, Environment, OrbitControls, Plane, useTexture } from '@react-three/drei'
+import Meebit from './Meebit'
 import "./styles.css";
 
 const { PI, sin, cos } = Math;
 
-const Letter = ({ i, count, radius, l }) => {
-  const $ref = useRef();
-
+const Model = (props) => {
+  const group = useRef()
+  const { nodes, materials } = useGLTF('/model_bear/bear.glb')
+  // const { nodes, materials } = useGLTF('/meebit_08617.glb')
+  console.log('materials', materials)
+  const texture = useTexture('/model_bear/Tex_Bear_A.png')
+  const material = materials['Material.001']
+  material.map = texture
   return (
-    <group ref={$ref} rotation={[0, 0, 0]}>
-      <Text
-        hAlign="center"
-        position={[
-          radius * sin((i / count) * PI * 2),
-          -0.8,
-          radius * cos((i / count) * PI * 2)
-        ]}
-        rotation={[0, (i / count) * PI * 2, 0]}
-        i={i}
-        children={l}
-      />
-    </group>
-  );
-};
-
-const Magic = ({ text, count, radius, start = 0, position }) => {
-  const $ref = useRef();
-  useEffect(() => {
-    gsap.to($ref.current.rotation, {
-      duration: 6,
-      y: PI * 1.3 + PI * 2,
-      repeat: -1,
-      ease: "power3.inOut"
-    });
-  });
-  return (
-    <group
-      ref={$ref}
-      position={position}
-      rotation={[0, PI * 1.3, 0]}
-      scale={[-1, 1, 1]}
-    >
-      {text.split("").map((l, i) => (
-        <Letter key={`1${i}`} l={l} radius={radius} i={i} count={count} />
-      ))}
-    </group>
-  );
-};
+      <group ref={group} {...props} dispose={null}>
+        <primitive object={nodes.hips} />
+        <skinnedMesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Bear.geometry}
+            material={material}
+            skeleton={nodes.Bear.skeleton}
+        >
+          <meshStandardMaterial map={texture} map-flipY={false} />
+        </skinnedMesh>
+      </group>
+  )
+}
 
 const Pavement = () => {
   return (
     <>
       <Plane
         rotation-x={-PI * 0.5}
-        position={[0, -7.9, 0]}
+        // position={[0, -7.9, 0]}
         args={[200, 200]}
         receiveShadow
       >
         <meshBasicMaterial
-          color={"#ffcda3"}
+          color={"#618145"}
           attach="material"
           transparent={true}
-          opacity={0.4}
+          // opacity={0.4}
         />
       </Plane>
-      <Reflector
-        clipBias={0.1}
-        textureWidth={1024}
-        textureHeight={1024}
-        position={[0, -8, 0]}
-        rotation={[-PI * 0.5, 0, 0]}
-      >
-        <planeBufferGeometry args={[200, 200]} />
-      </Reflector>
     </>
   );
 };
 
 export default function App() {
   return (
-    <Canvas colorManagement camera={{ fov: 30, position: [0, 90, 180] }}>
+    <Canvas colorManagement camera={{ fov: 30, position: [0, 10, 10] }}>
       <color attach="background" args={["#ebcfba"]} />
       <directionalLight position={[-40, 20, 20]} color="#c59cf1" />
       <directionalLight
@@ -90,16 +60,17 @@ export default function App() {
         intensity={1.5}
         color="#e78f48"
       />
-      <ambientLight color="#8d69cb" />
+      <ambientLight intensity={0.95} />
       <Suspense fallback={null}>
         <Pavement />
-        <Environment preset="night" />
-        <Magic
-          text={"PLAYGROUND"}
-          start={Math.PI * 1.18}
-          count={11}
-          radius={25}
-        />
+        {/*<Meebit/>*/}
+        <Model/>
+        {/*<Magic*/}
+        {/*  text={"WYF"}*/}
+        {/*  start={Math.PI * 1.18}*/}
+        {/*  count={11}*/}
+        {/*  radius={25}*/}
+        {/*/>*/}
       </Suspense>
       <OrbitControls />
     </Canvas>
